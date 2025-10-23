@@ -10,7 +10,7 @@ from utils import read_image, show_image
 
 
 # BEGIN YOUR IMPORTS
-
+from tqdm import tqdm
 # END YOUR IMPORTS
 
 
@@ -89,7 +89,7 @@ def order_corners(corners):
     """
     # BEGIN YOUR CODE
     sum_corners = np.sum(corners, axis=1) #array with the sum of coordinates x + y
-    diff_corners = np.diff(sum_corners, axis=1) # array with the difference of coordinates y - x
+    diff_corners = np.diff(corners, axis=1) # array with the difference of coordinates y - x
 
     top_left = corners[np.argmax(diff_corners)]#largest difference of coordinates y - x
     top_right = corners[np.argmax(sum_corners)] #largest sum of coordinates x + y
@@ -113,10 +113,10 @@ def find_corners(contour, epsilon=0.42):
     """
     # BEGIN YOUR CODE
     # calculate the approximation accuracy
-    epsi = epsilon * cv2.arcLength(contour, True)
+    epsi = 0.1 * cv2.arcLength(contour, True)
     # contour approximation with The Ramer–Douglas–Peucker algorithm
     corners = cv2.approxPolyDP(contour, epsi, True)
-    corners = corners.reshape(-1, 2)
+    corners = corners.reshape(-1, 2) #reshape [N, 1, 2] to [N, 2]
 
     # to avoid errors
     if len(corners) != 4:
@@ -142,7 +142,8 @@ def rescale_image(image, scale=0.42):
     """
     # BEGIN YOUR CODE
 
-    rescaled_image = cv2.rescale(image,scale,anti_aliasing=True)
+    rescaled_image = cv2.resize(image, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+
     
     return rescaled_image
     
@@ -159,7 +160,7 @@ def gaussian_blur(image, sigma):
     """
     # BEGIN YOUR CODE
 
-    blurred_image = cv2.gaussian(image,sigma)
+    blurred_image = cv2.GaussianBlur(image, (0, 0), sigma)
     return blurred_image
     
     # END YOUR CODE
@@ -198,18 +199,15 @@ def frontalize_image(image, ordered_corners):
     side = distance(top_left, top_right)
 
     # what are the 4 target (destination) points?
-    destination_points = np.array([
-        [0, 0],
-        [side - 1, 0],
-        [side - 1, side - 1],
-        [0, side - 1]
-    ])
+    destination_points = np.array([[0, side - 1], [side - 1, side - 1],[side - 1, 0],[0, 0]], dtype=np.float32)
+    ordered_corners = np.array(ordered_corners, dtype=np.float32)
+
 
     # perspective transformation matrix
     transform_matrix = cv2.getPerspectiveTransform(ordered_corners, destination_points)
 
     # image warped using the found perspective transformation matrix
-    warped_image = cv2.warpPerspective(image, transform_matrix, (side, side))
+    warped_image = cv2.warpPerspective(image, transform_matrix, dsize=(int(side), int(side)))
 
     assert warped_image.shape[0] == warped_image.shape[1], "height and width of the warped image must be equal"
 
