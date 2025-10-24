@@ -30,13 +30,11 @@ def resize_image(image, size):
     """
     # BEGIN YOUR CODE
 
-    # resized_image =
-
-    # return resized_image
+    resized_image = cv2.resize(image, size, interpolation=cv2.INTER_AREA)
+    return resized_image
     
     # END YOUR CODE
 
-    raise NotImplementedError
 
 
 def binarize(image, **binarization_kwargs):
@@ -51,15 +49,12 @@ def binarize(image, **binarization_kwargs):
     https://docs.opencv.org/4.x/d7/d4d/tutorial_py_thresholding.html
     """
     # BEGIN YOUR CODE
+    print(binarization_kwargs)
 
-    # binarized_image =
-
-    # return binarized_image
+    binarized_image = cv2.adaptiveThreshold(image, 255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,11,2)
+    return binarized_image
     
     # END YOUR CODE
-
-    raise NotImplementedError
-
 
 def crop_image(image, crop_factor):
     size = image.shape[:2]
@@ -84,23 +79,25 @@ def get_sudoku_cells(frontalized_image, crop_factor=0.42, binarization_kwargs={}
     """
     # BEGIN YOUR CODE
 
-    # resized_image =
+    resized_image = resize_image(frontalized_image, SUDOKU_SIZE)
     
-    # binarized_image =
+    binarized_image = binarize(resized_image, **binarization_kwargs)
     
-    # sudoku_cells = np.zeros((NUM_CELLS, NUM_CELLS, *CELL_SIZE), dtype=np.uint8)
-    # for i in range(NUM_CELLS):
-    #     for j in range(NUM_CELLS):
-    #         sudoku_cell =
-    #         sudoku_cell = crop_image(sudoku_cell, crop_factor=crop_factor)
+    sudoku_cells = np.zeros((NUM_CELLS, NUM_CELLS, *CELL_SIZE), dtype=np.uint8)
+    for i in range(NUM_CELLS):
+         for j in range(NUM_CELLS):
+             cell_height = SUDOKU_SIZE[0] // NUM_CELLS
+             cell_width = SUDOKU_SIZE[1] // NUM_CELLS
+             sudoku_cell = binarized_image[i*cell_height:(i+1)*cell_height, j*cell_width:(j+1)*cell_width]
+             sudoku_cell = crop_image(sudoku_cell, crop_factor=crop_factor)
             
-    #         sudoku_cells[i, j] = resize_image(sudoku_cell, CELL_SIZE)
+             sudoku_cells[i, j] = resize_image(sudoku_cell, CELL_SIZE)
 
-    # return sudoku_cells
+    return sudoku_cells
 
     # END YOUR CODE
 
-    raise NotImplementedError
+
 
 
 def is_empty(sudoku_cell, **kwargs):
@@ -112,14 +109,12 @@ def is_empty(sudoku_cell, **kwargs):
         cell_is_empty (bool): True or False depends on whether the Sudoku cell is empty or not
     """
     # BEGIN YOUR CODE
-
-    # cell_is_empty =
-    
-    # return cell_is_empty
+    # calculate the pixel intensity in a cell compared to a threshold to know if it's empty
+    cell_is_empty = sudoku_cell.mean() > kwargs
+    return cell_is_empty
 
     # END YOUR CODE
 
-    raise NotImplementedError
 
 
 def get_digit_correlations(sudoku_cell, templates_dict):
@@ -134,18 +129,16 @@ def get_digit_correlations(sudoku_cell, templates_dict):
 
     # BEGIN YOUR CODE
     
-    # if is_empty(sudoku_cell, ...):
-    #     return correlations
+    if is_empty(sudoku_cell, templates_dict):
+        return correlations
 
-    # for digit, templates in templates_dict.items():
-    #     # calculate the correlation score between the sudoku_cell and a digit
-    #     correlations[digit - 1] =
+    for digit, templates in templates_dict.items():
+         # calculate the correlation score between the sudoku_cell and a digit
+         correlations[digit - 1] = max([cv2.matchTemplate(sudoku_cell, template, cv2.TM_CCOEFF_NORMED).max() for template in templates])
 
-    # return correlations
+    return correlations
     
     # END YOUR CODE
-
-    raise NotImplementedError
 
 
 def show_correlations(sudoku_cell, correlations):
@@ -170,16 +163,14 @@ def recognize_digits(sudoku_cells, templates_dict, threshold=0.5):
     sudoku_matrix = np.zeros(sudoku_cells.shape[:2], dtype=np.uint8)
     
     # BEGIN YOUR CODE
-    
-    # for i in range(sudoku_cells.shape[0]):
-    #     for j in range(sudoku_cells.shape[1]):
-    #         sudoku_matrix[i, j] =
 
-    # return sudoku_matrix
+    for i in range(sudoku_cells.shape[0]):
+         for j in range(sudoku_cells.shape[1]):
+             sudoku_matrix[i, j] = np.argmax(get_digit_correlations(sudoku_cells[i, j], templates_dict))
+
+    return sudoku_matrix
 
     # END YOUR CODE
-
-    raise NotImplementedError
 
 
 def show_recognized_digits(image_paths, pipeline, figsize=(16, 12), digit_fontsize=10):

@@ -16,7 +16,7 @@ CELL_COORDINATES = {"image_0.jpg": {1: (0, 0),
                                     9: (5, 6)}}
 """
 
-#CELL_COORDINATES =
+CELL_COORDINATES = {}
 
 # END YOUR CODE
 
@@ -29,10 +29,9 @@ CELL_COORDINATES = {"image_0.jpg": {1: (0, 0),
 def get_template_pipeline():
     # BEGIN YOUR CODE
 
-    # pipeline =
+    pipeline = Pipeline()
     
-    # return pipeline
+    return pipeline
 
     # END YOUR CODE
 
-    raise NotImplementedError
