@@ -112,7 +112,7 @@ def find_corners(contour, epsilon=0.42):
                                     in order [top left, top right, bottom right, bottom left]
     """
     # BEGIN YOUR CODE
-    # calculate the approximation accuracy
+    # calculate the approximation accuracy, but I get problems when I use epsilon form the input
     epsi = 0.1 * cv2.arcLength(contour, True)
     # contour approximation with The Ramer–Douglas–Peucker algorithm
     corners = cv2.approxPolyDP(contour, epsi, True)

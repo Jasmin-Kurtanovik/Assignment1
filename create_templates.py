@@ -43,7 +43,7 @@ def main():
                     digits_count[digit] += 1
                     
                     digit_template_path = os.path.join(digit_templates_path, f"{os.path.splitext(file_name)[0]}_{digit}_{i}.jpg")
-                    imsave(digit_template_path, sudoku_cells[*coordinates])
+                    imsave(digit_template_path, sudoku_cells[tuple(coordinates)])
 
 
 if __name__ == "__main__":

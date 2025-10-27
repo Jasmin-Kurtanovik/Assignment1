@@ -2,6 +2,7 @@ import os
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
+from skimage.filters.rank import threshold
 
 from tqdm.notebook import tqdm
 
@@ -11,7 +12,7 @@ from utils import load_templates
 
 
 # BEGIN YOUR IMPORTS
-
+from skimage.feature import match_template
 # END YOUR IMPORTS
 
 
@@ -49,9 +50,11 @@ def binarize(image, **binarization_kwargs):
     https://docs.opencv.org/4.x/d7/d4d/tutorial_py_thresholding.html
     """
     # BEGIN YOUR CODE
-    print(binarization_kwargs)
-
-    binarized_image = cv2.adaptiveThreshold(image, 255,cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY,11,2)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) if len(image.shape) == 3 else image
+    binarized_image = cv2.adaptiveThreshold(image, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                            cv2.THRESH_BINARY_INV,
+                                            binarization_kwargs.get("block_size", 11),
+                                            binarization_kwargs.get("C", 2))
     return binarized_image
     
     # END YOUR CODE
@@ -110,10 +113,11 @@ def is_empty(sudoku_cell, **kwargs):
     """
     # BEGIN YOUR CODE
     # calculate the pixel intensity in a cell compared to a threshold to know if it's empty
-    cell_is_empty = sudoku_cell.mean() > kwargs
+    cell_is_empty = sudoku_cell.mean() > 250  # threshold can be adjusted
     return cell_is_empty
 
-    # END YOUR CODE
+
+# END YOUR CODE
 
 
 
@@ -128,16 +132,18 @@ def get_digit_correlations(sudoku_cell, templates_dict):
     correlations = np.zeros(9)
 
     # BEGIN YOUR CODE
-    
-    if is_empty(sudoku_cell, templates_dict):
+
+    if is_empty(sudoku_cell):
         return correlations
 
     for digit, templates in templates_dict.items():
-         # calculate the correlation score between the sudoku_cell and a digit
-         correlations[digit - 1] = max([cv2.matchTemplate(sudoku_cell, template, cv2.TM_CCOEFF_NORMED).max() for template in templates])
+        for template in templates:
+            print("Sudoku Cell Shape:", sudoku_cell.shape, "Type:", type(sudoku_cell))
+            print("Template Shape:", template.shape, "Type:", type(template))
+            correlations[digit - 1] = max( [cv2.matchTemplate(sudoku_cell, template, cv2.TM_CCOEFF_NORMED).max() for template in templates])
 
     return correlations
-    
+
     # END YOUR CODE
 
 
@@ -161,14 +167,19 @@ def recognize_digits(sudoku_cells, templates_dict, threshold=0.5):
         sudoku_matrix (np.array): a matrix of shape [N, N] with recognized digits of the Sudoku grid
     """
     sudoku_matrix = np.zeros(sudoku_cells.shape[:2], dtype=np.uint8)
-    
+
     # BEGIN YOUR CODE
 
     for i in range(sudoku_cells.shape[0]):
          for j in range(sudoku_cells.shape[1]):
-             sudoku_matrix[i, j] = np.argmax(get_digit_correlations(sudoku_cells[i, j], templates_dict))
+             correlations = get_digit_correlations(sudoku_cells[i, j], templates_dict)
+             best = np.max(correlations)
+             if best < threshold:
+                 sudoku_matrix[i, j] = 0
+             else:
+                 sudoku_matrix[i, j] = np.argmax(correlations) + 1
 
-    return sudoku_matrix
+         return sudoku_matrix
 
     # END YOUR CODE
 
